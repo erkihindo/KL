@@ -1,0 +1,297 @@
+var data = [];
+var metadata = [];
+var table = null;
+var hinne;
+var too;
+var nameList;
+
+var glyphD = "glyphicon glyphicon-sort-by-attributes-alt";
+var glyphU = "glyphicon glyphicon-arrow-up";
+
+var curGlyph = glyphD;
+var listDown = false;
+
+window.onload = function() {
+    
+    
+ 
+    $('#table tbody').on( 'click', 'tr', function () {
+        $(this).toggleClass('selected');
+    } );
+ 
+    $('#table').click( function () {
+        checkClickedRows();
+    } );
+    var dropdown="<SELECT class=\"select\" id=\"grade\" name=\"grade\">\n" +
+                "<OPTION value=\"ungraded\">0<\/OPTION>\n" +
+                "<OPTION value=\"1\">1<\/OPTION>\n" +
+                "<OPTION value=\"2\">2<\/OPTION>\n" +
+                "<OPTION value=\"3\">3<\/OPTION>\n" + 
+                "<OPTION value=\"4\">4<\/OPTION>" +
+                "<OPTION value=\"5\">5<\/OPTION>" + 
+                "<\/SELECT>";
+    var tablez = document.getElementById("table");
+    for (i = 1; i < 20; i++) { 
+        var row = tablez.insertRow(i);
+        var cell1 = row.insertCell(0);
+        var cell2 = row.insertCell(1);
+       
+
+        cell1.innerHTML = "Name " + i;
+        cell2.innerHTML = "111111IAPB--";
+       
+    }
+    
+    $.fn.editable.defaults.mode = 'inline';
+    $('#username').editable();
+    
+    checkClickedRows();
+    /*
+     $("#table_wrapper").slideToggle("fast");
+         $("#nameSel").slideToggle("fast");
+    */
+    //$("#list_im").addClass("glyphicon glyphicon-th-list");
+    
+	//expand list
+     $("#names").click(function(){
+         
+        $("#table_wrapper").slideToggle("fast");
+         $("#nameSel").slideToggle("fast");
+		//change icon
+		console.log("clicked names" + listDown);
+		if(listDown == false) {
+			listDown = true;
+			curGlyph = glyphU;
+		} else {
+			listDown = false;
+			curGlyph = glyphD;
+
+		}
+    });
+    $('grade').change(function() {
+   
+      var $this = $(this);
+      $this.parent().siblings('td[id^=row-]').html($this.val());
+        
+        
+       
+});
+}
+
+function checkClickedRows() {
+    if(table == null) {
+        table = $('#table').DataTable( {
+        "bInfo": false
+      });
+    }
+    console.log( table.rows('.selected').data().length +' row(s) selected' );
+    console.log( table.rows('.selected').data());
+    document.getElementById("names").style.color = "blue";
+    var namesCell = document.getElementById("names");
+    var names = "<span class=\"" + curGlyph + "\"> Tudeng(id): ";
+    nameList = [];
+    for (i = 0; i < table.rows('.selected').data().length; i++) { 
+        names += table.rows('.selected').data()[i][0] +"; "
+        nameList[i] = table.rows('.selected').data()[i][0];
+    }
+    
+    namesCell.innerHTML = names;
+  
+    
+}
+
+$(function(){
+  
+   //defaults
+   $.fn.editable.defaults.url = '/post'; 
+
+    //enable / disable
+   $('#enable').click(function() {
+       $('#user .editable').editable('toggleDisabled');
+   });    
+    
+    //editables 
+    
+    
+    $('#too').editable({
+        prepend: "Vali töö",
+        source: [
+            {value: 1, text: 'Sissejuhatus'},
+            {value: 2, text: 'CATS'}
+        ],
+        display: function(value, sourceData) {
+             var colors = {"": "gray", 1: "green", 2: "green"},
+                 elem = $.grep(sourceData, function(o){
+                    too = sourceData[value];
+                     return o.value == value;});
+                 
+             if(elem.length) {    
+                 $(this).text(elem[0].text).css("color", colors[value]);
+                
+             } else {
+                 $(this).empty(); 
+             }
+            
+        }   
+    });    
+    
+    $('#status').editable();   
+    
+    $('#group').editable({
+       showbuttons: false 
+    });   
+
+    $('#vacation').editable({
+        datepicker: {
+            todayBtn: 'linked'
+        } 
+    });  
+              
+    
+    $('#comments').editable({
+        showbuttons: 'bottom',
+        prepend: ""
+    }); 
+    
+    
+         
+
+
+    
+                  
+         
+   $('#user .editable').on('hidden', function(e, reason){
+        if(reason === 'save' || reason === 'nochange') {
+            var $next = $(this).closest('tr').next().find('.editable');
+            if($('#autoopen').is(':checked')) {
+                setTimeout(function() {
+                    $next.editable('show');
+                }, 300); 
+            } else {
+                $next.focus();
+            } 
+        }
+   });
+   
+});
+
+
+
+$(function(){
+    //ajax mocks
+    $.mockjaxSettings.responseTime = 500; 
+    
+    $.mockjax({
+        url: '/post',
+        response: function(settings) {
+            log(settings, this);
+            console.log(settings.data.value);
+            hinne = settings.data.value;
+        }
+    });
+
+    $.mockjax({
+        url: '/error',
+        status: 400,
+        statusText: 'Bad Request',
+        response: function(settings) {
+            this.responseText = 'Please input correct value'; 
+            log(settings, this);
+        }        
+    });
+    
+    $.mockjax({
+        url: '/status',
+        status: 500,
+        response: function(settings) {
+            this.responseText = 'Internal Server Error';
+            log(settings, this);
+        }        
+    });
+  
+    $.mockjax({
+        url: '/groups',
+        response: function(settings) {
+            this.responseText = [ 
+             {value: 0, text: '0'},
+             {value: 1, text: '1'},
+             {value: 2, text: '2'},
+             {value: 3, text: '3'},
+             {value: 4, text: '4'},
+             {value: 5, text: '5'}
+           ];
+            
+           log(settings, this);
+        }        
+    });
+    
+    function log(settings, response) {
+            var s = [], str;
+            s.push(settings.type.toUpperCase() + ' url = "' + settings.url + '"');
+            for(var a in settings.data) {
+                if(settings.data[a] && typeof settings.data[a] === 'object') {
+                    str = [];
+                    for(var j in settings.data[a]) {str.push(j+': "'+settings.data[a][j]+'"');}
+                    str = '{ '+str.join(', ')+' }';
+                } else {
+                    str = '"'+settings.data[a]+'"';
+                }
+                s.push(a + ' = ' + str);
+            }
+            s.push('RESPONSE: status = ' + response.status);
+           
+
+            if(response.responseText) {
+                if($.isArray(response.responseText)) {
+                    s.push('[');
+                    $.each(response.responseText, function(i, v){
+                       s.push('{value: ' + v.value+', text: "'+v.text+'"}');
+                         
+                    }); 
+                    s.push(']');
+                } else {
+                   s.push($.trim(response.responseText));
+                }
+            }
+            s.push('--------------------------------------\n');
+            $('#console').val(s.join('\n') + $('#console').val());
+        document.getElementById("group").style.color = "green";
+    }                 
+    
+});
+
+
+
+function save() {
+    var errors = false;
+    if(too == null) {
+        console.log("Pole tööd");
+        document.getElementById("too").style.color = "red";
+        errors = true;
+    } else {
+        console.log(too); 
+    }
+    
+    if(hinne == null) {
+        console.log("Pole hinnet");
+        document.getElementById("group").style.color = "red";
+        errors = true;
+    } else {
+        console.log(hinne); 
+    }
+    
+    if(nameList.length == 0) {
+        console.log("Pole nimesid");
+        document.getElementById("names").style.color = "red";
+        errors = true;
+        
+    } else {
+       console.log(nameList);             
+    }
+    
+    if(errors == false) {
+        document.getElementById("save_message").innerHTML="Saved: " + nameList +"; " + too.text+ "; " + hinne; 
+    }
+    
+}
+
